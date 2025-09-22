@@ -43,6 +43,19 @@
         .data-row:hover {
             background-color: #f3f4f6;
         }
+        .dataset-card {
+            transition: all 0.3s ease;
+        }
+        .dataset-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -156,15 +169,72 @@
         </div>
     </div>
 
+    <!-- Datasets Management Page -->
+    <div id="datasetsPage" class="page">
+        <div class="min-h-screen bg-gray-50 py-12">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-xl shadow-lg p-8 fade-in">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800">My Datasets</h1>
+                            <p class="text-gray-600 mt-2">Manage and visualize your data collections</p>
+                        </div>
+                        <button onclick="showCreateDatasetModal()" 
+                            class="bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-600 transition transform hover:scale-105">
+                            <i class="fas fa-plus mr-2"></i>New Dataset
+                        </button>
+                    </div>
+
+                    <!-- Search and Filter -->
+                    <div class="mb-6 flex flex-col sm:flex-row gap-4">
+                        <div class="relative flex-grow">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" id="datasetSearch" placeholder="Search datasets..." 
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                onkeyup="filterDatasets()">
+                        </div>
+                        <select id="sortDatasets" onchange="sortDatasets()" 
+                            class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                            <option value="name">Sort by Name</option>
+                            <option value="date">Sort by Date</option>
+                            <option value="size">Sort by Size</option>
+                        </select>
+                    </div>
+
+                    <!-- Datasets Grid -->
+                    <div id="datasetsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Dataset cards will be dynamically added here -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyDatasetsState" class="text-center py-12 hidden">
+                        <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-700 mb-2">No datasets yet</h3>
+                        <p class="text-gray-500 mb-6">Create your first dataset to start visualizing your data</p>
+                        <button onclick="showCreateDatasetModal()" 
+                            class="bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-600 transition">
+                            <i class="fas fa-plus mr-2"></i>Create Dataset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Data Input Page -->
     <div id="dataInputPage" class="page">
         <div class="min-h-screen bg-gray-50 py-12">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white rounded-xl shadow-lg p-8 fade-in">
-                    <div class="text-center mb-8">
-                        <i class="fas fa-database text-6xl text-indigo-500 mb-4"></i>
-                        <h1 class="text-3xl font-bold text-gray-800">Enter Your Data</h1>
-                        <p class="text-gray-600 mt-2">Add all your data points below, then generate visualizations</p>
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800">Enter Your Data</h1>
+                            <p class="text-gray-600 mt-2">Dataset: <span id="currentDatasetName" class="font-semibold text-indigo-600"></span></p>
+                        </div>
+                        <button onclick="showPage('datasetsPage')" 
+                            class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Datasets
+                        </button>
                     </div>
 
                     <div class="mb-6">
@@ -210,6 +280,10 @@
                             class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition transform hover:scale-105">
                             <i class="fas fa-eraser mr-2"></i>Clear All
                         </button>
+                        <button onclick="saveDataset()" 
+                            class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition transform hover:scale-105">
+                            <i class="fas fa-save mr-2"></i>Save Dataset
+                        </button>
                         <button onclick="generateCharts()" 
                             class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition transform hover:scale-105">
                             <i class="fas fa-chart-line mr-2"></i>Generate Charts
@@ -231,8 +305,28 @@
                     </div>
                     <div class="flex items-center space-x-4">
                         <span class="text-gray-600">Welcome, <span id="userName" class="font-semibold"></span></span>
-                        <button onclick="resetData()" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
-                            <i class="fas fa-redo mr-2"></i>Reset Data
+                        <div class="relative">
+                            <button id="datasetSelectorBtn" onclick="toggleDatasetSelector()" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition flex items-center">
+                                <i class="fas fa-database mr-2"></i>
+                                <span id="currentDatasetSelector">Select Dataset</span>
+                                <i class="fas fa-chevron-down ml-2"></i>
+                            </button>
+                            <div id="datasetSelector" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg z-50">
+                                <div class="py-1">
+                                    <div class="px-4 py-2 text-sm text-gray-700 border-b">Your Datasets</div>
+                                    <div id="datasetSelectorList">
+                                        <!-- Dataset options will be dynamically added here -->
+                                    </div>
+                                    <div class="px-4 py-2 border-t">
+                                        <button onclick="showPage('datasetsPage')" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                                            <i class="fas fa-plus mr-1"></i>Manage Datasets
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="exportData()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                            <i class="fas fa-download mr-2"></i>Export
                         </button>
                         <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
                             <i class="fas fa-sign-out-alt mr-2"></i>Logout
@@ -243,60 +337,98 @@
         </nav>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Charts Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Line Chart -->
-                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">
-                        <i class="fas fa-chart-line mr-2 text-green-500"></i>Line Chart
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="lineChart"></canvas>
+            <!-- Dataset Info -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6 fade-in">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Current Dataset: <span id="dashboardDatasetName" class="text-indigo-600"></span></h2>
+                        <p class="text-gray-600 mt-1">Created: <span id="dashboardDatasetDate"></span> | Data Points: <span id="dashboardDatasetSize"></span></p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="editCurrentDataset()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                            <i class="fas fa-edit mr-2"></i>Edit Data
+                        </button>
+                        <button onclick="refreshCharts()" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Bar Chart -->
-                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">
-                        <i class="fas fa-chart-bar mr-2 text-purple-500"></i>Bar Chart
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="barChart"></canvas>
-                    </div>
+            <!-- Tabs for Chart Types -->
+            <div class="bg-white rounded-xl shadow-lg mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="flex -mb-px">
+                        <button onclick="switchTab('line')" class="tab-btn py-4 px-6 text-center border-b-2 border-indigo-500 font-medium text-sm text-indigo-600 focus:outline-none">
+                            <i class="fas fa-chart-line mr-2"></i>Line Chart
+                        </button>
+                        <button onclick="switchTab('bar')" class="tab-btn py-4 px-6 text-center border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none">
+                            <i class="fas fa-chart-bar mr-2"></i>Bar Chart
+                        </button>
+                        <button onclick="switchTab('pie')" class="tab-btn py-4 px-6 text-center border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none">
+                            <i class="fas fa-chart-pie mr-2"></i>Pie Chart
+                        </button>
+                        <button onclick="switchTab('doughnut')" class="tab-btn py-4 px-6 text-center border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none">
+                            <i class="fas fa-circle-notch mr-2"></i>Doughnut Chart
+                        </button>
+                        <button onclick="switchTab('radar')" class="tab-btn py-4 px-6 text-center border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none">
+                            <i class="fas fa-spider mr-2"></i>Radar Chart
+                        </button>
+                    </nav>
                 </div>
 
-                <!-- Pie Chart -->
-                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">
-                        <i class="fas fa-chart-pie mr-2 text-orange-500"></i>Pie Chart
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="pieChart"></canvas>
+                <!-- Tab Contents -->
+                <div class="p-6">
+                    <!-- Line Chart -->
+                    <div id="line-tab" class="tab-content active">
+                        <div class="chart-container">
+                            <canvas id="lineChart"></canvas>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Doughnut Chart -->
-                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">
-                        <i class="fas fa-circle-notch mr-2 text-red-500"></i>Doughnut Chart
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="doughnutChart"></canvas>
+                    <!-- Bar Chart -->
+                    <div id="bar-tab" class="tab-content">
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Pie Chart -->
+                    <div id="pie-tab" class="tab-content">
+                        <div class="chart-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Doughnut Chart -->
+                    <div id="doughnut-tab" class="tab-content">
+                        <div class="chart-container">
+                            <canvas id="doughnutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Radar Chart -->
+                    <div id="radar-tab" class="tab-content">
+                        <div class="chart-container">
+                            <canvas id="radarChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Data Table -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mt-6 fade-in">
+            <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">
-                    <i class="fas fa-table mr-2 text-indigo-500"></i>Your Data
+                    <i class="fas fa-table mr-2 text-indigo-500"></i>Data Points
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
                             </tr>
                         </thead>
                         <tbody id="dashboardTableBody" class="bg-white divide-y divide-gray-200">
@@ -308,11 +440,120 @@
         </div>
     </div>
 
+    <!-- Create Dataset Modal -->
+    <div id="createDatasetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Create New Dataset</h2>
+                <button onclick="hideCreateDatasetModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="createDatasetForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Dataset Name</label>
+                    <input type="text" id="newDatasetName" required 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                        placeholder="e.g., Monthly Sales Data">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                    <textarea id="newDatasetDescription" rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                        placeholder="Brief description of your dataset"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="hideCreateDatasetModal()" 
+                        class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">
+                        Create Dataset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Data storage
-        let userData = [];
+        let datasets = [];
+        let currentDatasetId = null;
         let currentUser = null;
         let charts = {};
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('signupForm').addEventListener('submit', handleSignup);
+            document.getElementById('createDatasetForm').addEventListener('submit', handleCreateDataset);
+            
+            // Initialize charts
+            initCharts();
+            
+            // Add sample data for demonstration
+            addSampleDatasets();
+        });
+
+        // Add sample datasets for demonstration
+        function addSampleDatasets() {
+            const sampleDatasets = [
+                {
+                    id: generateId(),
+                    name: "Monthly Sales",
+                    description: "Monthly sales data for 2023",
+                    createdAt: new Date().toISOString(),
+                    data: [
+                        { label: "January", value: 65 },
+                        { label: "February", value: 78 },
+                        { label: "March", value: 90 },
+                        { label: "April", value: 81 },
+                        { label: "May", value: 95 }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    name: "Website Traffic",
+                    description: "Monthly website visitors",
+                    createdAt: new Date().toISOString(),
+                    data: [
+                        { label: "Jan", value: 1200 },
+                        { label: "Feb", value: 1900 },
+                        { label: "Mar", value: 3000 },
+                        { label: "Apr", value: 2500 },
+                        { label: "May", value: 3200 }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    name: "Product Categories",
+                    description: "Sales by product category",
+                    createdAt: new Date().toISOString(),
+                    data: [
+                        { label: "Electronics", value: 4500 },
+                        { label: "Clothing", value: 3200 },
+                        { label: "Home & Garden", value: 2800 },
+                        { label: "Sports", value: 1900 },
+                        { label: "Books", value: 1500 }
+                    ]
+                }
+            ];
+            
+            // Only add sample datasets if no datasets exist
+            if (localStorage.getItem('datasets') === null) {
+                localStorage.setItem('datasets', JSON.stringify(sampleDatasets));
+            }
+        }
+
+        // Generate unique ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
 
         // Initialize charts
         function initCharts() {
@@ -397,12 +638,42 @@
                 },
                 options: chartOptions
             });
+
+            // Radar Chart
+            charts.radar = new Chart(document.getElementById('radarChart'), {
+                type: 'radar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Data Values',
+                        data: [],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        pointBackgroundColor: 'rgb(255, 99, 132)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(255, 99, 132)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
 
         // Update all charts with new data
         function updateCharts() {
-            const labels = userData.map(d => d.label);
-            const values = userData.map(d => d.value);
+            const currentDataset = datasets.find(d => d.id === currentDatasetId);
+            if (!currentDataset) return;
+            
+            const labels = currentDataset.data.map(d => d.label);
+            const values = currentDataset.data.map(d => d.value);
 
             // Update line chart
             charts.line.data.labels = labels;
@@ -423,20 +694,330 @@
             charts.doughnut.data.labels = labels;
             charts.doughnut.data.datasets[0].data = values;
             charts.doughnut.update();
+
+            // Update radar chart
+            charts.radar.data.labels = labels;
+            charts.radar.data.datasets[0].data = values;
+            charts.radar.update();
         }
 
         // Update dashboard table
         function updateDashboardTable() {
+            const currentDataset = datasets.find(d => d.id === currentDatasetId);
+            if (!currentDataset) return;
+            
             const tbody = document.getElementById('dashboardTableBody');
             tbody.innerHTML = '';
             
-            userData.forEach(data => {
+            // Calculate total for percentage
+            const total = currentDataset.data.reduce((sum, item) => sum + item.value, 0);
+            
+            currentDataset.data.forEach((data, index) => {
                 const row = tbody.insertRow();
+                const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : 0;
+                
                 row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${index + 1}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.label}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${data.value}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div class="flex items-center">
+                            <div class="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
+                                <div class="bg-indigo-600 h-2.5 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <span>${percentage}%</span>
+                        </div>
+                    </td>
                 `;
             });
+        }
+
+        // Update dataset info in dashboard
+        function updateDatasetInfo() {
+            const currentDataset = datasets.find(d => d.id === currentDatasetId);
+            if (!currentDataset) return;
+            
+            document.getElementById('dashboardDatasetName').textContent = currentDataset.name;
+            document.getElementById('dashboardDatasetDate').textContent = new Date(currentDataset.createdAt).toLocaleDateString();
+            document.getElementById('dashboardDatasetSize').textContent = currentDataset.data.length;
+        }
+
+        // Load datasets from localStorage
+        function loadDatasets() {
+            const storedDatasets = localStorage.getItem('datasets');
+            if (storedDatasets) {
+                datasets = JSON.parse(storedDatasets);
+            }
+        }
+
+        // Save datasets to localStorage
+        function saveDatasets() {
+            localStorage.setItem('datasets', JSON.stringify(datasets));
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notificationText.textContent = message;
+            notification.className = `notification ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Show page
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            // Load datasets when showing datasets page
+            if (pageId === 'datasetsPage') {
+                loadDatasets();
+                renderDatasets();
+            }
+            
+            // Update dashboard when showing dashboard page
+            if (pageId === 'dashboardPage') {
+                updateDatasetInfo();
+                updateCharts();
+                updateDashboardTable();
+                updateDatasetSelector();
+            }
+        }
+
+        // Handle login
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Simple authentication (in real app, this would be server-side)
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                document.getElementById('userName').textContent = user.name;
+                
+                // Load datasets
+                loadDatasets();
+                
+                // Check if there are any datasets
+                if (datasets.length > 0) {
+                    // Set the first dataset as current
+                    currentDatasetId = datasets[0].id;
+                    showPage('dashboardPage');
+                } else {
+                    showPage('datasetsPage');
+                }
+                
+                showNotification('Login successful!');
+            } else {
+                showNotification('Invalid email or password', 'error');
+            }
+        }
+
+        // Handle signup
+        function handleSignup(e) {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            
+            // Check if user already exists
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            if (users.find(u => u.email === email)) {
+                showNotification('Email already exists', 'error');
+                return;
+            }
+            
+            // Save new user
+            users.push({ name, email, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            showNotification('Account created successfully!');
+            
+            // Clear form
+            this.reset();
+            
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+                showPage('loginPage');
+            }, 1500);
+        }
+
+        // Handle create dataset
+        function handleCreateDataset(e) {
+            e.preventDefault();
+            const name = document.getElementById('newDatasetName').value;
+            const description = document.getElementById('newDatasetDescription').value;
+            
+            // Create new dataset
+            const newDataset = {
+                id: generateId(),
+                name,
+                description,
+                createdAt: new Date().toISOString(),
+                data: []
+            };
+            
+            datasets.push(newDataset);
+            saveDatasets();
+            
+            // Set as current dataset
+            currentDatasetId = newDataset.id;
+            
+            // Hide modal and go to data input page
+            hideCreateDatasetModal();
+            showPage('dataInputPage');
+            
+            // Update current dataset name
+            document.getElementById('currentDatasetName').textContent = name;
+            
+            // Clear form
+            this.reset();
+            
+            showNotification('Dataset created successfully!');
+        }
+
+        // Show create dataset modal
+        function showCreateDatasetModal() {
+            document.getElementById('createDatasetModal').classList.remove('hidden');
+        }
+
+        // Hide create dataset modal
+        function hideCreateDatasetModal() {
+            document.getElementById('createDatasetModal').classList.add('hidden');
+        }
+
+        // Render datasets in the datasets page
+        function renderDatasets() {
+            const grid = document.getElementById('datasetsGrid');
+            const emptyState = document.getElementById('emptyDatasetsState');
+            
+            grid.innerHTML = '';
+            
+            if (datasets.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            datasets.forEach(dataset => {
+                const card = document.createElement('div');
+                card.className = 'dataset-card bg-white rounded-xl shadow-md p-6 border border-gray-200';
+                
+                const createdDate = new Date(dataset.createdAt).toLocaleDateString();
+                const dataSize = dataset.data.length;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">${dataset.name}</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="editDataset('${dataset.id}')" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteDataset('${dataset.id}')" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">${dataset.description || 'No description'}</p>
+                    <div class="flex justify-between text-sm text-gray-500 mb-4">
+                        <span><i class="far fa-calendar mr-1"></i> ${createdDate}</span>
+                        <span><i class="fas fa-database mr-1"></i> ${dataSize} data points</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <button onclick="visualizeDataset('${dataset.id}')" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition text-sm">
+                            <i class="fas fa-chart-line mr-2"></i>Visualize
+                        </button>
+                        <button onclick="exportDataset('${dataset.id}')" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition text-sm">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Edit dataset
+        function editDataset(id) {
+            currentDatasetId = id;
+            const dataset = datasets.find(d => d.id === id);
+            
+            if (dataset) {
+                document.getElementById('currentDatasetName').textContent = dataset.name;
+                
+                // Load data into the table
+                const tbody = document.getElementById('dataTableBody');
+                tbody.innerHTML = '';
+                
+                if (dataset.data.length > 0) {
+                    dataset.data.forEach(item => {
+                        const row = tbody.insertRow();
+                        row.className = 'data-row';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="text" class="data-label w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${item.label}" required>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" step="0.01" class="data-value w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${item.value}" required>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick="removeDataRow(this)" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                    });
+                } else {
+                    // Add empty row
+                    addDataRow();
+                }
+                
+                showPage('dataInputPage');
+            }
+        }
+
+        // Delete dataset
+        function deleteDataset(id) {
+            if (confirm('Are you sure you want to delete this dataset? This action cannot be undone.')) {
+                datasets = datasets.filter(d => d.id !== id);
+                saveDatasets();
+                renderDatasets();
+                showNotification('Dataset deleted successfully!');
+            }
+        }
+
+        // Visualize dataset
+        function visualizeDataset(id) {
+            currentDatasetId = id;
+            showPage('dashboardPage');
+        }
+
+        // Export dataset
+        function exportDataset(id) {
+            const dataset = datasets.find(d => d.id === id);
+            if (!dataset) return;
+            
+            const dataStr = JSON.stringify(dataset, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `${dataset.name.replace(/\s+/g, '_')}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showNotification('Dataset exported successfully!');
         }
 
         // Add data row to input table
@@ -486,166 +1067,171 @@
             showNotification('All data cleared');
         }
 
-        // Generate charts from input data
-        function generateCharts() {
+        // Save dataset
+        function saveDataset() {
+            const currentDataset = datasets.find(d => d.id === currentDatasetId);
+            if (!currentDataset) return;
+            
             const rows = document.querySelectorAll('#dataTableBody tr');
-            userData = [];
+            const data = [];
             
             rows.forEach(row => {
                 const label = row.querySelector('.data-label').value.trim();
                 const value = parseFloat(row.querySelector('.data-value').value);
                 
                 if (label && !isNaN(value)) {
-                    userData.push({ label, value });
+                    data.push({ label, value });
                 }
             });
             
-            if (userData.length === 0) {
+            if (data.length === 0) {
                 showNotification('Please enter at least one data point', 'error');
                 return;
             }
             
-            // Save to localStorage
-            localStorage.setItem('userData', JSON.stringify(userData));
+            currentDataset.data = data;
+            saveDatasets();
             
-            // Initialize and update charts
-            initCharts();
-            updateCharts();
-            updateDashboardTable();
-            
-            // Show dashboard
+            showNotification('Dataset saved successfully!');
+        }
+
+        // Generate charts from input data
+        function generateCharts() {
+            saveDataset();
             showPage('dashboardPage');
             showNotification('Charts generated successfully!');
         }
 
-        // Reset data and go back to input page
-        function resetData() {
-            userData = [];
-            localStorage.removeItem('userData');
-            showPage('dataInputPage');
-            showNotification('Data reset. Please enter new data.');
+        // Edit current dataset
+        function editCurrentDataset() {
+            editDataset(currentDatasetId);
         }
 
-        // Show notification
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            const notificationText = document.getElementById('notificationText');
-            
-            notificationText.textContent = message;
-            notification.className = `notification ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg show`;
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
+        // Refresh charts
+        function refreshCharts() {
+            updateCharts();
+            showNotification('Charts refreshed!');
         }
 
-        // Show page
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
+        // Export data
+        function exportData() {
+            exportDataset(currentDatasetId);
+        }
+
+        // Switch chart tab
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
             });
-            document.getElementById(pageId).classList.add('active');
+            
+            // Remove active state from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-500', 'text-indigo-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Add active state to clicked tab button
+            event.target.closest('.tab-btn').classList.remove('border-transparent', 'text-gray-500');
+            event.target.closest('.tab-btn').classList.add('border-indigo-500', 'text-indigo-600');
         }
 
-        // Login form handler
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Simple authentication (in real app, this would be server-side)
-            const users = JSON.parse(localStorage.getItem('users')) || [];
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                document.getElementById('userName').textContent = user.name;
-                
-                // Check if there's existing data
-                const savedData = localStorage.getItem('userData');
-                if (savedData) {
-                    userData = JSON.parse(savedData);
-                    initCharts();
-                    updateCharts();
-                    updateDashboardTable();
-                    showPage('dashboardPage');
-                } else {
-                    showPage('dataInputPage');
-                }
-                
-                showNotification('Login successful!');
-            } else {
-                showNotification('Invalid email or password', 'error');
-            }
-        });
+        // Toggle dataset selector dropdown
+        function toggleDatasetSelector() {
+            const selector = document.getElementById('datasetSelector');
+            selector.classList.toggle('hidden');
+        }
 
-        // Signup form handler
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
+        // Update dataset selector dropdown
+        function updateDatasetSelector() {
+            const selectorList = document.getElementById('datasetSelectorList');
+            const currentDataset = datasets.find(d => d.id === currentDatasetId);
             
-            // Check if user already exists
-            const users = JSON.parse(localStorage.getItem('users')) || [];
-            if (users.find(u => u.email === email)) {
-                showNotification('Email already exists', 'error');
-                return;
+            selectorList.innerHTML = '';
+            
+            datasets.forEach(dataset => {
+                const option = document.createElement('div');
+                option.className = `px-4 py-2 hover:bg-gray-100 cursor-pointer ${dataset.id === currentDatasetId ? 'bg-indigo-50 text-indigo-700' : ''}`;
+                option.textContent = dataset.name;
+                option.onclick = function() {
+                    selectDataset(dataset.id);
+                };
+                selectorList.appendChild(option);
+            });
+            
+            // Update current dataset selector text
+            if (currentDataset) {
+                document.getElementById('currentDatasetSelector').textContent = currentDataset.name;
+            }
+        }
+
+        // Select dataset from dropdown
+        function selectDataset(id) {
+            currentDatasetId = id;
+            updateDatasetInfo();
+            updateCharts();
+            updateDashboardTable();
+            updateDatasetSelector();
+            toggleDatasetSelector();
+            showNotification('Dataset changed successfully!');
+        }
+
+        // Filter datasets
+        function filterDatasets() {
+            const searchTerm = document.getElementById('datasetSearch').value.toLowerCase();
+            const datasetCards = document.querySelectorAll('.dataset-card');
+            
+            datasetCards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Sort datasets
+        function sortDatasets() {
+            const sortBy = document.getElementById('sortDatasets').value;
+            
+            switch(sortBy) {
+                case 'name':
+                    datasets.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'date':
+                    datasets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    break;
+                case 'size':
+                    datasets.sort((a, b) => b.data.length - a.data.length);
+                    break;
             }
             
-            // Save new user
-            users.push({ name, email, password });
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            showNotification('Account created successfully!');
-            
-            // Clear form
-            this.reset();
-            
-            // Redirect to login page after a short delay
-            setTimeout(() => {
-                showPage('loginPage');
-            }, 1500);
-        });
+            renderDatasets();
+        }
 
         // Logout function
         function logout() {
             currentUser = null;
+            currentDatasetId = null;
+            datasets = [];
             showPage('loginPage');
             showNotification('Logged out successfully');
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add some sample data for demonstration
-            const sampleData = [
-                { label: 'January', value: 65 },
-                { label: 'February', value: 78 },
-                { label: 'March', value: 90 },
-                { label: 'April', value: 81 },
-                { label: 'May', value: 95 }
-            ];
+        // Close dataset selector when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.getElementById('datasetSelector');
+            const selectorBtn = document.getElementById('datasetSelectorBtn');
             
-            // Pre-fill the data input table with sample data
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = '';
-            sampleData.forEach(data => {
-                const row = tbody.insertRow();
-                row.className = 'data-row';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <input type="text" class="data-label w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${data.label}" required>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <input type="number" step="0.01" class="data-value w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${data.value}" required>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <button onclick="removeDataRow(this)" class="text-red-600 hover:text-red-900">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-            });
+            if (!selector.contains(event.target) && !selectorBtn.contains(event.target)) {
+                selector.classList.add('hidden');
+            }
         });
     </script>
 </body>
